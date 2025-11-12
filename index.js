@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
-
-app.use(express.json());
+const morgan = require("morgan");
 
 let persons = [
   {
@@ -25,6 +24,24 @@ let persons = [
     number: "39-23-6423122",
   },
 ];
+
+
+app.use(morgan(function (tokens, req, res) { // este tipo de funcion se llama en JS un callback
+
+  morgan.token('body', (req) => JSON.stringify(req.body)); // token personalizado para mostrar el body de la peticion
+
+  return [
+    tokens.method(req, res),      // Método HTTP
+    tokens.url(req, res),         // URL solicitada
+    tokens.status(req, res),      // Código de estado
+    tokens.res(req, res, 'content-length'), '-', // Tamaño de la respuesta
+    tokens['response-time'](req, res), 'ms',
+    tokens.body(req, res)         // Cuerpo de la petición
+  ].join(' ');
+}));
+
+
+app.use(express.json()) // middleware para parsear el body de las peticiones
 
 app.get("/", (request, response) => {
   response.send(`<h1>Prueba de servidor NODE en el puerto ${PORT}!</h1>`);
@@ -95,6 +112,12 @@ app.post("/api/persons", (request, response) => {
   persons = persons.concat(objectPerson);
   response.json(objectPerson); // esta linea envia la respuesta al servidor diciendole que se ha creado el nuevo objeto
 });
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint) // middleware para manejar endpoints desconocidos
 
 const PORT = 3001;
 app.listen(PORT, () => {
