@@ -68,7 +68,8 @@ app.get("/info", (request, response) => {
 
 app.get("/api/persons/:id", (request, response) => {
   Person.findById(request.params.id).then((person) => {
-    if (person) { // si encuentra la persona
+    if (person) {
+      // si encuentra la persona
       response.json(person);
     } else {
       response.status(404).json({ error: "Person not found" }).end();
@@ -77,17 +78,11 @@ app.get("/api/persons/:id", (request, response) => {
 });
 
 app.delete("/api/persons/:id", (request, response) => {
-  // :id es un parametro dinamico que se pasa en la url
-  const id = Number(request.params.id);
-
-  if (persons.find((p) => p.id === id)) {
-    console.log(`Eliminado el id ${id}`);
-    persons = persons.filter((p) => p.id !== id);
-    response.sendStatus(204).end(); // response es el objeto que se envia al cliente
-  } else {
-    console.log(`No existe el id ${id}`);
-    response.status(404).end();
-  }
+  Person.findByIdAndDelete(request.params.id)
+    .then((result) => {
+      response.status(204).end();
+    })
+    .catch((error) => nex(error)); // Si hay algun error, lo pasamos al siguiente middleware (error handler)
 });
 
 app.post("/api/persons", (request, response) => {
@@ -107,6 +102,7 @@ app.post("/api/persons", (request, response) => {
       error: "El nombre debe ser unico",
     });
   }
+
   const objectPerson = new Person({
     name: body.name,
     number: body.number,
@@ -117,11 +113,36 @@ app.post("/api/persons", (request, response) => {
   });
 });
 
+app.put("/api/persons/:id", (request, response, next) => {
+  
+  const body = request.body; // obtener el body de la peticion
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then((updatedPerson) => {
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
 
 app.use(unknownEndpoint); // middleware para manejar endpoints desconocidos
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+  next(error);
+};
+
+app.use(errorHandler); // middleware para manejar errores
 
 const PORT = process.env.PORT || 3001; // process.env.PORT significa que si hay una variable de entorno PORT la use, si no use el puerto 3001
 app.listen(PORT, () => {
