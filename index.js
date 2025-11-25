@@ -7,29 +7,6 @@ app.use(express.static("dist")); // middleware para servir archivos estaticos de
 app.use(cors()); // middleware para permitir el acceso desde cualquier origen
 app.use(express.json()); // middleware para parsear el body de las peticiones
 
-let persons = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
 app.use(
   morgan(function (tokens, req, res) {
     // este tipo de funcion se llama en JS un callback
@@ -85,7 +62,7 @@ app.delete("/api/persons/:id", (request, response) => {
     .catch((error) => nex(error)); // Si hay algun error, lo pasamos al siguiente middleware (error handler)
 });
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body;
 
   if (!body.name || !body.number) {
@@ -93,16 +70,8 @@ app.post("/api/persons", (request, response) => {
     return response.status(400).json({
       error: "El nombre y el numero son obligatorios",
     });
-  } else if (
-    persons.find(
-      (p) => p.name.toLocaleLowerCase() === body.name.toLocaleLowerCase()
-    )
-  ) {
-    return response.status(400).json({
-      error: "El nombre debe ser unico",
-    });
-  }
-
+  } 
+  
   const objectPerson = new Person({
     name: body.name,
     number: body.number,
@@ -110,7 +79,7 @@ app.post("/api/persons", (request, response) => {
 
   objectPerson.save().then((savedPerson) => {
     response.json(savedPerson);
-  });
+  }) .catch(error => next(error));
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
