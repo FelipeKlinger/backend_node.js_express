@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // cargar las variables de entorno desde el archivo .env
 const mongoose = require("mongoose");
 
 mongoose.set("strictQuery", false);
@@ -17,8 +17,20 @@ mongoose
   });
 
 const personSchema = new mongoose.Schema({
-  name: String,
-  number: String,
+  name: {
+    type: String,
+    minlength: 3,
+    required: true,
+  },
+  number: {
+    type: String,
+    minlength: 9,
+    validate: {
+      validator : function(v) {
+        return /^\d{2,3}-\d{5,}$/.test(v); // formato 2 o 3 dígitos, guion, y 5 o más dígitos después
+      }},
+    required: true,
+  }
 });
 
 personSchema.set("toJSON", {
