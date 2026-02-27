@@ -5,6 +5,7 @@ mongoose.set("strictQuery", false);
 
 const url = process.env.MONGODB_URI;
 
+// Console para verificar que la variable de entorno se ha cargado correctamente
 console.log("Connecting to", url);
 
 mongoose
